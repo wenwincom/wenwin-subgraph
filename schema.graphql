@@ -1,0 +1,44 @@
+type Ticket @entity {
+  " The ID of the ticket "
+  id: ID!
+
+  " The address of the ticket owner "
+  owner: String!
+
+  " The ID of the draw the ticket belongs to "
+  draw: BigInt!
+
+  " The ticket combination saved as a hex string (ith bit is 1 if the number i+1 is in the combination) "
+  combination: String!
+
+  " Whether the ticket has been claimed "
+  isClaimed: Boolean!
+}
+
+type TicketCombination @entity {
+  " The ID of the ticket combination (<draw id>_<encoded combination as hex>) "
+  id: ID!
+
+  " The number of tickets with this combination for the draw "
+  numberOfTickets: BigInt!
+}
+
+type Draw @entity {
+  " The ID of the draw "
+  id: ID!
+
+  " The winning ticket for the draw saved as a hex string (or null if the draw has not been completed) "
+  winningTicket: String
+
+  " The jackpot size for the draw "
+  jackpotSize: BigInt!
+
+  " The number of distinct players for the draw "
+  numberOfPlayers: BigInt!
+
+  " The list of addresses of the players for the draw "
+  players: [String!]!
+
+  " The list of winners per tier for the draw "
+  numberOfWinnersPerTier: [BigInt!]!
+}

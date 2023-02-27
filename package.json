@@ -1,0 +1,20 @@
+{
+  "name": "wenwin-subgraph",
+  "version": "0.0.1",
+  "license": "MIT",
+  "scripts": {
+    "create": "graph create wenwin --node https://api.thegraph.com/deploy/",
+    "create-local": "graph create wenwin --node http://127.0.0.1:8020",
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --studio wenwin",
+    "deploy-local": "graph deploy wenwin --ipfs http://127.0.0.1:5001 --node http://127.0.0.1:8020",
+    "prettier-format": "prettier --config .prettierrc.js src/**/*.ts --write",
+    "prettier-format-check": "prettier --config .prettierrc.js src/**/*.ts --check"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.37.2",
+    "@graphprotocol/graph-ts": "^0.29.1",
+    "prettier": "^2.8.3"
+  }
+}
