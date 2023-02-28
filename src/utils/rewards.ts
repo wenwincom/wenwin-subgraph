@@ -6,13 +6,12 @@ const PERCENTAGE_BASE = BigInt.fromI32(100);
 const EXCESS_BONUS_ALLOCATION = BigInt.fromI32(50);
 const SAFETY_MARGIN = BigInt.fromI32(33);
 
-export function calculateTierReward(lottery: Lottery, winTier: number): BigInt {
-  const currentDraw = lottery.currentDraw();
+export function calculateTierReward(lottery: Lottery, currentDraw: BigInt, winTier: number): BigInt {
   return calculateReward(
     lottery.currentNetProfit(),
     lottery.fixedReward(<i32>winTier),
     lottery.fixedReward(SELECTION_SIZE),
-    currentDraw.gt(BigInt.fromI32(0)) ? lottery.ticketsSold(currentDraw.minus(BigInt.fromI32(1))) : BigInt.fromI32(0),
+    currentDraw.gt(BigInt.fromI32(0)) ? lottery.ticketsSold(currentDraw) : BigInt.fromI32(0),
     winTier === SELECTION_SIZE,
     lottery.expectedPayout(),
   );

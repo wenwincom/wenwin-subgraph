@@ -42,8 +42,13 @@ export function handleNewTicket(event: NewTicket): void {
     saveTicketCombinations(unpackedTicket, counter, 0, result, drawId);
   }
 
+  const lottery = Lottery.bind(event.address);
   const draw = createOrLoadDraw(drawId);
   addPlayerToDraw(draw, player);
+  if (drawId.equals(lottery.currentDraw())) {
+    // Calculate non-jackpot prizes only for current draw
+    setDrawPrizesPerTier(draw, lottery, false);
+  }
   draw.save();
 }
 
@@ -87,6 +92,7 @@ export function handleFinishedExecutingDraw(event: FinishedExecutingDraw): void 
   const draw = createOrLoadDraw(drawId);
   draw.winningTicket = winningTicket.toHexString();
   draw.numberOfWinnersPerTier = numberOfWinningCombinations;
+  setDrawPrizesPerTier(draw, lottery);
   draw.save();
 
   const nextDraw = createOrLoadDraw(drawId.plus(BigInt.fromI32(1)));

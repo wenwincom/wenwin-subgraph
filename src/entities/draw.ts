@@ -20,10 +20,11 @@ export function createOrLoadDraw(drawId: BigInt): Draw {
   return draw;
 }
 
-export function setDrawPrizesPerTier(draw: Draw, lottery: Lottery): void {
-  const prizes = new Array<BigInt>(SELECTION_SIZE - SWAP_WIN_TIER + 1);
-  for (let tier = SWAP_WIN_TIER; tier <= SELECTION_SIZE; ++tier) {
-    prizes[tier - SWAP_WIN_TIER] = calculateTierReward(lottery, tier);
+export function setDrawPrizesPerTier(draw: Draw, lottery: Lottery, calculateJackpot: boolean = true): void {
+  const finalTier = calculateJackpot ? SELECTION_SIZE : SELECTION_SIZE - 1;
+  const prizes = draw.prizesPerTier.length ? draw.prizesPerTier : new Array<BigInt>(SELECTION_SIZE - SWAP_WIN_TIER + 1);
+  for (let tier = SWAP_WIN_TIER; tier <= finalTier; ++tier) {
+    prizes[tier - SWAP_WIN_TIER] = calculateTierReward(lottery, BigInt.fromString(draw.id), tier);
   }
   draw.prizesPerTier = prizes;
 }
