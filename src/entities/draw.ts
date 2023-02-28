@@ -1,5 +1,8 @@
 import { Address, BigInt } from '@graphprotocol/graph-ts';
+import { Lottery } from '../../generated/Lottery/Lottery';
 import { Draw } from '../../generated/schema';
+import { SELECTION_SIZE, SWAP_WIN_TIER } from '../constants';
+import { calculateTierReward } from '../utils';
 
 export function createOrLoadDraw(drawId: BigInt): Draw {
   const savedDraw = Draw.load(drawId.toString());
@@ -10,11 +13,19 @@ export function createOrLoadDraw(drawId: BigInt): Draw {
   const draw = new Draw(drawId.toString());
   draw.id = drawId.toString();
   draw.winningTicket = null;
-  draw.jackpotSize = BigInt.fromI32(0);
+  draw.prizesPerTier = new Array<BigInt>();
   draw.numberOfPlayers = BigInt.fromI32(0);
   draw.players = new Array<string>();
   draw.numberOfWinnersPerTier = new Array<BigInt>();
   return draw;
+}
+
+export function setDrawPrizesPerTier(draw: Draw, lottery: Lottery): void {
+  const prizes = new Array<BigInt>(SELECTION_SIZE - SWAP_WIN_TIER + 1);
+  for (let tier = SWAP_WIN_TIER; tier <= SELECTION_SIZE; ++tier) {
+    prizes[tier - SWAP_WIN_TIER] = calculateTierReward(lottery, tier);
+  }
+  draw.prizesPerTier = prizes;
 }
 
 export function addPlayerToDraw(draw: Draw, player: Address): void {

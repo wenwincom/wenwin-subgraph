@@ -30,8 +30,8 @@ type Draw @entity {
   " The winning ticket for the draw saved as a hex string (or null if the draw has not been completed) "
   winningTicket: String
 
-  " The jackpot size for the draw "
-  jackpotSize: BigInt!
+  " The prizes per tier (from lower to higher tier) for the draw "
+  prizesPerTier: [BigInt!]!
 
   " The number of distinct players for the draw "
   numberOfPlayers: BigInt!

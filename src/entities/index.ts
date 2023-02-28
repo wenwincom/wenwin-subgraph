@@ -1,4 +1,4 @@
-export { addPlayerToDraw, createOrLoadDraw } from './draw';
+export { addPlayerToDraw, createOrLoadDraw, setDrawPrizesPerTier } from './draw';
 export { createOrLoadTicket } from './ticket';
 export {
   calculateNumberOfAlreadyAdded,

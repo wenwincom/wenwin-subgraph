@@ -2,9 +2,9 @@ import { BigInt } from '@graphprotocol/graph-ts';
 import {
   ClaimedTicket,
   FinishedExecutingDraw,
+  InitialPotPeriodFinalized,
   Lottery,
   NewTicket,
-  StartedExecutingDraw,
 } from '../generated/Lottery/Lottery';
 import { Ticket } from '../generated/schema';
 import { SELECTION_SIZE, SWAP_WIN_TIER } from './constants';
@@ -15,8 +15,16 @@ import {
   createOrLoadTicket,
   findNumberOfWinningCombinationsPerTier,
   saveTicketCombinations,
+  setDrawPrizesPerTier,
 } from './entities';
-import { calculateJackpot, unpackTicket } from './utils';
+import { unpackTicket } from './utils';
+
+export function handleInitialPotPeriodFinalized(event: InitialPotPeriodFinalized): void {
+  const lottery = Lottery.bind(event.address);
+  const draw = createOrLoadDraw(BigInt.fromI32(0));
+  setDrawPrizesPerTier(draw, lottery);
+  draw.save();
+}
 
 export function handleNewTicket(event: NewTicket): void {
   const ticketId = event.params.ticketId;
@@ -39,24 +47,10 @@ export function handleNewTicket(event: NewTicket): void {
   draw.save();
 }
 
-export function handleStartedExecutingDraw(event: StartedExecutingDraw): void {
-  const drawId = event.params.drawId;
-  const lotteryAddress = event.transaction.to;
-  if (lotteryAddress === null) {
-    return;
-  }
-
-  const lottery = Lottery.bind(lotteryAddress);
-
-  const draw = createOrLoadDraw(drawId);
-  draw.jackpotSize = calculateJackpot(lottery);
-  draw.save();
-}
-
 export function handleFinishedExecutingDraw(event: FinishedExecutingDraw): void {
   const winningTicket = event.params.winningTicket;
   const drawId = event.params.drawId;
-
+  const lottery = Lottery.bind(event.address);
   const unpackedTicket = unpackTicket(winningTicket);
 
   // Check if there is a jackpot winner
@@ -94,6 +88,10 @@ export function handleFinishedExecutingDraw(event: FinishedExecutingDraw): void 
   draw.winningTicket = winningTicket.toHexString();
   draw.numberOfWinnersPerTier = numberOfWinningCombinations;
   draw.save();
+
+  const nextDraw = createOrLoadDraw(drawId.plus(BigInt.fromI32(1)));
+  setDrawPrizesPerTier(nextDraw, lottery);
+  nextDraw.save();
 }
 
 export function handleClaimedTicket(event: ClaimedTicket): void {

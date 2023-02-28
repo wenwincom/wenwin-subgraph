@@ -21,10 +21,10 @@ dataSources:
         - name: Lottery
           file: ./abis/Lottery.json
       eventHandlers:
+        - event: InitialPotPeriodFinalized(indexed uint256)
+          handler: handleInitialPotPeriodFinalized
         - event: NewTicket(uint128,uint256,uint128,indexed address,uint120,indexed address,indexed address)
           handler: handleNewTicket
-        - event: StartedExecutingDraw(indexed uint128)
-          handler: handleStartedExecutingDraw
         - event: FinishedExecutingDraw(indexed uint128,indexed uint256,indexed uint120)
           handler: handleFinishedExecutingDraw
         - event: ClaimedTicket(indexed address,indexed uint256,indexed uint256)
