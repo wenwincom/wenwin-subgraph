@@ -21,7 +21,7 @@ import { unpackTicket } from './utils';
 
 export function handleInitialPotPeriodFinalized(event: InitialPotPeriodFinalized): void {
   const lottery = Lottery.bind(event.address);
-  const draw = createOrLoadDraw(BigInt.fromI32(0));
+  const draw = createOrLoadDraw(BigInt.fromI32(0), lottery);
   setDrawPrizesPerTier(draw, lottery);
   draw.save();
 }
@@ -43,7 +43,7 @@ export function handleNewTicket(event: NewTicket): void {
   }
 
   const lottery = Lottery.bind(event.address);
-  const draw = createOrLoadDraw(drawId);
+  const draw = createOrLoadDraw(drawId, lottery);
   addPlayerToDraw(draw, player);
   if (drawId.equals(lottery.currentDraw())) {
     // Calculate non-jackpot prizes only for current draw
@@ -89,13 +89,13 @@ export function handleFinishedExecutingDraw(event: FinishedExecutingDraw): void 
     numberOfWinningCombinations[counter - 1] = numberOfWinningCombinationsPerTier.minus(numberOfAlreadyAdded);
   }
 
-  const draw = createOrLoadDraw(drawId);
+  const draw = createOrLoadDraw(drawId, lottery);
   draw.winningTicket = winningTicket.toHexString();
   draw.numberOfWinnersPerTier = numberOfWinningCombinations;
   setDrawPrizesPerTier(draw, lottery);
   draw.save();
 
-  const nextDraw = createOrLoadDraw(drawId.plus(BigInt.fromI32(1)));
+  const nextDraw = createOrLoadDraw(drawId.plus(BigInt.fromI32(1)), lottery);
   setDrawPrizesPerTier(nextDraw, lottery);
   nextDraw.save();
 }

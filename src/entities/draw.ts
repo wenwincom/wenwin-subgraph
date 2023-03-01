@@ -4,7 +4,7 @@ import { Draw } from '../../generated/schema';
 import { SELECTION_SIZE, SWAP_WIN_TIER } from '../constants';
 import { calculateTierReward } from '../utils';
 
-export function createOrLoadDraw(drawId: BigInt): Draw {
+export function createOrLoadDraw(drawId: BigInt, lottery: Lottery): Draw {
   const savedDraw = Draw.load(drawId.toString());
   if (savedDraw !== null) {
     return savedDraw;
@@ -12,6 +12,7 @@ export function createOrLoadDraw(drawId: BigInt): Draw {
 
   const draw = new Draw(drawId.toString());
   draw.id = drawId.toString();
+  draw.scheduledTimestamp = lottery.drawScheduledAt(drawId);
   draw.winningTicket = null;
   draw.prizesPerTier = new Array<BigInt>();
   draw.numberOfPlayers = BigInt.fromI32(0);
