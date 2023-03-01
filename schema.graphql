@@ -27,6 +27,9 @@ type Draw @entity {
   " The ID of the draw "
   id: ID!
 
+  " The timestamp of the draw finalization "
+  scheduledTimestamp: BigInt!
+
   " The winning ticket for the draw saved as a hex string (or null if the draw has not been completed) "
   winningTicket: String
 
