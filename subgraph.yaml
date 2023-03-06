@@ -1,5 +1,5 @@
 specVersion: 0.0.5
-description: wenwin subgraph
+description: Wenwin subgraph
 repository: https://github.com/graphprotocol/
 schema:
   file: ./schema.graphql
@@ -8,19 +8,24 @@ dataSources:
     name: Lottery
     network: goerli
     source:
-      address: '0x40cD8F47bC39263e9b445FC0cF11AFfEFD82d039'
+      address: '0xf73b512f204e739B32D004D7dF3924A8CE30B66d'
       abi: Lottery
-      startBlock: 8530386
+      startBlock: 8607387
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
+        - Lottery
+        - Ticket
         - TicketCombinations
+        - Draw
       abis:
         - name: Lottery
           file: ./abis/Lottery.json
       eventHandlers:
+        - event: LotteryDeployed(address,indexed uint256,uint256,uint256,uint256,indexed uint8,indexed uint8,uint256,uint256[])
+          handler: handlerLotteryDeployed
         - event: InitialPotPeriodFinalized(indexed uint256)
           handler: handleInitialPotPeriodFinalized
         - event: NewTicket(uint128,uint256,uint128,indexed address,uint120,indexed address,indexed address)

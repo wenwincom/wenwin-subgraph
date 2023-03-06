@@ -1,18 +1,17 @@
 import { BigInt } from '@graphprotocol/graph-ts';
 import { Lottery } from '../../generated/Lottery/Lottery';
-import { SELECTION_SIZE } from '../constants';
 
 const PERCENTAGE_BASE = BigInt.fromI32(100);
 const EXCESS_BONUS_ALLOCATION = BigInt.fromI32(50);
 const SAFETY_MARGIN = BigInt.fromI32(33);
 
-export function calculateTierReward(lottery: Lottery, currentDraw: BigInt, winTier: number): BigInt {
+export function calculateTierReward(lottery: Lottery, currentDraw: BigInt, winTier: i32, selectionSize: i32): BigInt {
   return calculateReward(
     lottery.currentNetProfit(),
-    lottery.fixedReward(<i32>winTier),
-    lottery.fixedReward(SELECTION_SIZE),
+    lottery.fixedReward(winTier),
+    lottery.fixedReward(selectionSize),
     currentDraw.gt(BigInt.fromI32(0)) ? lottery.ticketsSold(currentDraw) : BigInt.fromI32(0),
-    winTier === SELECTION_SIZE,
+    winTier === selectionSize,
     lottery.expectedPayout(),
   );
 }

@@ -1,10 +1,9 @@
 import { BigInt } from '@graphprotocol/graph-ts';
-import { SELECTION_MAX, SELECTION_SIZE } from '../constants';
 
-export function unpackTicket(packedTicket: BigInt): number[] {
-  const unpackedTicket: number[] = new Array(SELECTION_SIZE);
+export function unpackTicket(packedTicket: BigInt, selectionSize: i32, selectionMax: i32): number[] {
+  const unpackedTicket: number[] = new Array(selectionSize);
   let mask = BigInt.fromI32(1);
-  for (let counter = 0, chosenNumbersCounter = 0; counter < SELECTION_MAX; counter++) {
+  for (let counter = 0, chosenNumbersCounter = 0; counter < selectionMax; counter++) {
     if (packedTicket.bitAnd(mask) != BigInt.fromI32(0)) {
       unpackedTicket[chosenNumbersCounter++] = counter + 1;
     }
@@ -13,12 +12,12 @@ export function unpackTicket(packedTicket: BigInt): number[] {
   return unpackedTicket;
 }
 
-export function packCombination(combination: number[]): BigInt {
+export function packCombination(combination: number[], selectionMax: i32): BigInt {
   let packedCombination = BigInt.fromI32(0);
   let mask = BigInt.fromI32(1);
   for (
     let counter = 0, combinationCounter = 0;
-    counter < SELECTION_MAX && combinationCounter < combination.length;
+    counter < selectionMax && combinationCounter < combination.length;
     counter++
   ) {
     if (combination[combinationCounter] === counter + 1) {

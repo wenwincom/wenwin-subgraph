@@ -1,17 +1,18 @@
-import { Address, BigInt } from '@graphprotocol/graph-ts';
-import { Lottery } from '../../generated/Lottery/Lottery';
-import { Draw } from '../../generated/schema';
-import { SELECTION_SIZE, SWAP_WIN_TIER } from '../constants';
+import { Address, BigInt, log } from '@graphprotocol/graph-ts';
+import { Lottery as LotteryContract } from '../../generated/Lottery/Lottery';
+import { Draw, Lottery } from '../../generated/schema';
 import { calculateTierReward } from '../utils';
 
-export function createOrLoadDraw(drawId: BigInt, lottery: Lottery): Draw {
-  const savedDraw = Draw.load(drawId.toString());
+export function createOrLoadDraw(drawId: BigInt, lottery: LotteryContract): Draw {
+  const lotteryAddress = lottery._address.toHexString();
+  const internalDrawId = `${lotteryAddress}_${drawId.toString()}`;
+  const savedDraw = Draw.load(internalDrawId);
   if (savedDraw !== null) {
     return savedDraw;
   }
 
-  const draw = new Draw(drawId.toString());
-  draw.id = drawId.toString();
+  const draw = new Draw(internalDrawId);
+  draw.drawId = drawId;
   draw.scheduledTimestamp = lottery.drawScheduledAt(drawId);
   draw.winningTicket = null;
   draw.prizesPerTier = new Array<BigInt>();
@@ -21,11 +22,27 @@ export function createOrLoadDraw(drawId: BigInt, lottery: Lottery): Draw {
   return draw;
 }
 
-export function setDrawPrizesPerTier(draw: Draw, lottery: Lottery, calculateJackpot: boolean = true): void {
-  const finalTier = calculateJackpot ? SELECTION_SIZE : SELECTION_SIZE - 1;
-  const prizes = draw.prizesPerTier.length ? draw.prizesPerTier : new Array<BigInt>(SELECTION_SIZE - SWAP_WIN_TIER + 1);
-  for (let tier = SWAP_WIN_TIER; tier <= finalTier; ++tier) {
-    prizes[tier - SWAP_WIN_TIER] = calculateTierReward(lottery, BigInt.fromString(draw.id), tier);
+export function setDrawPrizesPerTier(
+  draw: Draw,
+  lotteryContract: LotteryContract,
+  calculateJackpot: boolean = true,
+): void {
+  const lotteryAddress = lotteryContract._address.toHexString();
+  const lottery = Lottery.load(lotteryAddress);
+  if (lottery === null) {
+    log.warning('setDrawPrizesPerTier: Lottery with address {} not found for draw {}', [
+      lotteryAddress,
+      draw.id.toString(),
+    ]);
+    return;
+  }
+
+  const selectionSize = lottery.selectionSize;
+  const swapWinTier = lottery.swapWinTier;
+  const finalTier = calculateJackpot ? selectionSize : selectionSize - 1;
+  const prizes = draw.prizesPerTier.length ? draw.prizesPerTier : new Array<BigInt>(selectionSize - swapWinTier + 1);
+  for (let tier = swapWinTier; tier <= finalTier; ++tier) {
+    prizes[tier - swapWinTier] = calculateTierReward(lotteryContract, draw.drawId, tier, selectionSize);
   }
   draw.prizesPerTier = prizes;
 }

@@ -1,9 +1,14 @@
-import { BigInt } from '@graphprotocol/graph-ts';
+import { Address, BigInt } from '@graphprotocol/graph-ts';
 import { TicketCombination } from '../../generated/schema';
 import { packCombination } from '../utils';
 
-export function createOrLoadTicketCombination(drawId: BigInt, combination: number[]): TicketCombination {
-  const combinationId = getCombinationId(drawId, combination);
+export function createOrLoadTicketCombination(
+  lotteryAddress: Address,
+  drawId: BigInt,
+  combination: number[],
+  selectionSize: i32,
+): TicketCombination {
+  const combinationId = getCombinationId(lotteryAddress, drawId, combination, selectionSize);
 
   const savedTicketCombination = TicketCombination.load(combinationId);
   if (savedTicketCombination !== null) {
@@ -21,9 +26,11 @@ export function saveTicketCombinations(
   start: number,
   result: number[],
   drawId: BigInt,
+  lotteryAddress: Address,
+  selectionSize: i32,
 ): void {
   if (len === 0) {
-    const ticketCombination = createOrLoadTicketCombination(drawId, result);
+    const ticketCombination = createOrLoadTicketCombination(lotteryAddress, drawId, result, selectionSize);
     ticketCombination.numberOfTickets = ticketCombination.numberOfTickets.plus(BigInt.fromI32(1));
     ticketCombination.save();
     return;
@@ -31,7 +38,7 @@ export function saveTicketCombinations(
 
   for (let i: number = start; i <= input.length - len; i++) {
     result[<i32>result.length - <i32>len] = input[<i32>i];
-    saveTicketCombinations(input, len - 1, i + 1, result, drawId);
+    saveTicketCombinations(input, len - 1, i + 1, result, drawId, lotteryAddress, selectionSize);
   }
 }
 
@@ -41,10 +48,12 @@ export function findNumberOfWinningCombinationsPerTier(
   start: number,
   result: number[],
   drawId: BigInt,
+  lotteryAddress: Address,
+  selectionSize: i32,
 ): BigInt {
   let numberOfWinningCombinations = BigInt.fromI32(0);
   if (len === 0) {
-    const ticketCombination = TicketCombination.load(getCombinationId(drawId, result));
+    const ticketCombination = TicketCombination.load(getCombinationId(lotteryAddress, drawId, result, selectionSize));
     if (ticketCombination === null) {
       return BigInt.fromI32(0);
     }
@@ -54,7 +63,7 @@ export function findNumberOfWinningCombinationsPerTier(
   for (let i = start; i <= input.length - len; i++) {
     result[<i32>result.length - <i32>len] = input[<i32>i];
     numberOfWinningCombinations = numberOfWinningCombinations.plus(
-      findNumberOfWinningCombinationsPerTier(input, len - 1, i + 1, result, drawId),
+      findNumberOfWinningCombinationsPerTier(input, len - 1, i + 1, result, drawId, lotteryAddress, selectionSize),
     );
   }
 
@@ -73,9 +82,9 @@ export function calculateNumberOfAlreadyAdded(numberOfWinningCombinations: BigIn
   return numberOfAlreadyAdded;
 }
 
-function getCombinationId(drawId: BigInt, combination: number[]): string {
-  const packedCombination = packCombination(combination);
-  return drawId.toString() + '_' + packedCombination.toHexString();
+function getCombinationId(lotteryAddress: Address, drawId: BigInt, combination: number[], selectionMax: i32): string {
+  const packedCombination = packCombination(combination, selectionMax);
+  return `${lotteryAddress.toHexString()}_${drawId.toString()}_${packedCombination.toHexString()}`;
 }
 
 function factorial(num: number): number {
