@@ -1,6 +1,23 @@
-type Ticket @entity {
-  " The ID of the ticket "
+type Lottery @entity {
+  " The ID of the lottery (lottery address) "
   id: ID!
+
+  " The number of selected numbers in a ticket combination "
+  selectionSize: Int!
+
+  " The maximum number that can be selected in a ticket combination "
+  selectionMax: Int!
+
+  " The smallest win tier that has prize (i.e. its prize is equal to the ticket price) "
+  swapWinTier: Int!
+}
+
+type Ticket @entity {
+  " The unique identifier (<lottery address>_<ticket id>) "
+  id: ID!
+
+  " The ID of the ticket "
+  ticketId: BigInt
 
   " The address of the ticket owner "
   owner: String!
@@ -16,7 +33,7 @@ type Ticket @entity {
 }
 
 type TicketCombination @entity {
-  " The ID of the ticket combination (<draw id>_<encoded combination as hex>) "
+  " The ID of the ticket combination (<lottery address>_<draw id>_<encoded combination as hex>) "
   id: ID!
 
   " The number of tickets with this combination for the draw "
@@ -24,8 +41,11 @@ type TicketCombination @entity {
 }
 
 type Draw @entity {
-  " The ID of the draw "
+  " The unique identifier (<lottery address>_<draw id>)"
   id: ID!
+
+  " The ID of the draw "
+  drawId: BigInt!
 
   " The timestamp of the draw finalization "
   scheduledTimestamp: BigInt!
