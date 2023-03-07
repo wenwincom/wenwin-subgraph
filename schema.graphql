@@ -22,8 +22,8 @@ type Ticket @entity {
   " The address of the ticket owner "
   owner: String!
 
-  " The ID of the draw the ticket belongs to "
-  draw: BigInt!
+  " The draw the ticket belongs to "
+  draw: Draw!
 
   " The ticket combination saved as a hex string (ith bit is 1 if the number i+1 is in the combination) "
   combination: String!
