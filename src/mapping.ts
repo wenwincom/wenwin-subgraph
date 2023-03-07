@@ -62,6 +62,7 @@ export function handleNewTicket(event: NewTicket): void {
   const lotteryContract = LotteryContract.bind(lotteryAddress);
   const draw = createOrLoadDraw(drawId, lotteryContract);
   addPlayerToDraw(draw, player);
+  draw.numberOfSoldTickets = draw.numberOfSoldTickets.plus(BigInt.fromI32(1));
   if (drawId.equals(lotteryContract.currentDraw())) {
     // Calculate non-jackpot prizes only for current draw
     setDrawPrizesPerTier(draw, lotteryContract, false);

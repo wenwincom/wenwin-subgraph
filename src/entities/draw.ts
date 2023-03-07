@@ -19,6 +19,7 @@ export function createOrLoadDraw(drawId: BigInt, lottery: LotteryContract): Draw
   draw.numberOfPlayers = BigInt.fromI32(0);
   draw.players = new Array<string>();
   draw.numberOfWinnersPerTier = new Array<BigInt>();
+  draw.numberOfSoldTickets = BigInt.fromI32(0);
   return draw;
 }
 

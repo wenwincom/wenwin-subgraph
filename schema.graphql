@@ -64,4 +64,7 @@ type Draw @entity {
 
   " The list of winners per tier for the draw "
   numberOfWinnersPerTier: [BigInt!]!
+
+  " The number of tickets sold for the draw "
+  numberOfSoldTickets: BigInt!
 }
