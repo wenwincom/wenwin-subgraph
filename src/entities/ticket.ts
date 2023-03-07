@@ -16,7 +16,7 @@ export function createOrLoadTicket(
 
   const ticket = new Ticket(internalId);
   ticket.ticketId = ticketId;
-  ticket.draw = drawId;
+  ticket.draw = `${lotteryAddress.toHexString()}_${drawId.toString()}`;
   ticket.combination = packedTicket.toHexString();
   ticket.owner = player.toHexString();
   ticket.isClaimed = false;
