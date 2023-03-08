@@ -7,7 +7,7 @@ import {
   LotteryDeployed,
   NewTicket,
 } from '../generated/Lottery/Lottery';
-import { Lottery, Ticket } from '../generated/schema';
+import { Lottery, Ticket, TicketCombination } from '../generated/schema';
 import {
   addPlayerToDraw,
   calculateNumberOfAlreadyAdded,
@@ -86,7 +86,7 @@ export function handleFinishedExecutingDraw(event: FinishedExecutingDraw): void 
 
   // Check if there is a jackpot winner
   const result: number[] = new Array(lottery.selectionSize);
-  let numberOfWinningCombinationsPerTier = findNumberOfWinningCombinationsPerTier(
+  const numberOfJackpotWinners = findNumberOfWinningCombinationsPerTier(
     unpackedTicket,
     lottery.selectionSize,
     0,
@@ -95,33 +95,35 @@ export function handleFinishedExecutingDraw(event: FinishedExecutingDraw): void 
     lotteryAddress,
     lottery.selectionSize,
   );
-  if (numberOfWinningCombinationsPerTier > BigInt.fromI32(0)) {
-    return;
-  }
 
-  // Non jackpot winner tiers
   const numberOfWinningCombinations: BigInt[] = new Array(lottery.selectionSize - 1);
   numberOfWinningCombinations.fill(BigInt.fromI32(0));
-  let numberOfAlreadyAdded: BigInt = BigInt.fromI32(0);
-  for (let counter = lottery.selectionSize - 1; counter >= lottery.swapWinTier; counter--) {
-    const result: number[] = new Array(counter);
-    numberOfWinningCombinationsPerTier = findNumberOfWinningCombinationsPerTier(
-      unpackedTicket,
-      counter,
-      0,
-      result,
-      drawId,
-      lotteryAddress,
-      lottery.selectionSize,
-    );
-    numberOfAlreadyAdded = calculateNumberOfAlreadyAdded(numberOfWinningCombinations, counter);
 
-    numberOfWinningCombinations[counter - 1] = numberOfWinningCombinationsPerTier.minus(numberOfAlreadyAdded);
+  // Non-jackpot winner tiers
+  if (numberOfJackpotWinners == BigInt.fromI32(0)) {
+    let numberOfAlreadyAdded: BigInt = BigInt.fromI32(0);
+    for (let counter = lottery.selectionSize - 1; counter >= lottery.swapWinTier; counter--) {
+      const result: number[] = new Array(counter);
+      const numberOfWinningCombinationsPerTier = findNumberOfWinningCombinationsPerTier(
+        unpackedTicket,
+        counter,
+        0,
+        result,
+        drawId,
+        lotteryAddress,
+        lottery.selectionSize,
+      );
+      numberOfAlreadyAdded = calculateNumberOfAlreadyAdded(numberOfWinningCombinations, counter);
+      numberOfWinningCombinations[counter - 1] = numberOfWinningCombinationsPerTier.minus(numberOfAlreadyAdded);
+    }
   }
+
+  const numberOfWinnersPerTier = numberOfWinningCombinations.slice(lottery.swapWinTier - 1);
+  numberOfWinnersPerTier.push(numberOfJackpotWinners);
 
   const draw = createOrLoadDraw(drawId, lotteryContract);
   draw.winningTicket = winningTicket.toHexString();
-  draw.numberOfWinnersPerTier = numberOfWinningCombinations;
+  draw.numberOfWinnersPerTier = numberOfWinnersPerTier;
   setDrawPrizesPerTier(draw, lotteryContract);
   draw.save();
 
