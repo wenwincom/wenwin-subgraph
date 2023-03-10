@@ -15,11 +15,11 @@ export function createOrLoadLottery(
   const lottery = new Lottery(lotteryId);
   lottery.selectionSize = selectionSize;
   lottery.selectionMax = selectionMax;
-  lottery.swapWinTier = getSwapWinTier(fixedRewards);
+  lottery.minWinningTier = getMinWinningTier(fixedRewards);
   return lottery;
 }
 
-function getSwapWinTier(fixedRewards: BigInt[]): i32 {
+function getMinWinningTier(fixedRewards: BigInt[]): i32 {
   for (let winTier = 0; winTier < fixedRewards.length; winTier++) {
     if (!fixedRewards[winTier].equals(BigInt.fromI32(0))) {
       return winTier;
