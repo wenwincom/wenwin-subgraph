@@ -7,18 +7,17 @@ import {
   LotteryDeployed,
   NewTicket,
 } from '../generated/Lottery/Lottery';
-import { Lottery, Ticket, TicketCombination } from '../generated/schema';
+import { Lottery, Ticket } from '../generated/schema';
 import {
   addPlayerToDraw,
-  calculateNumberOfAlreadyAdded,
+  addTicketToDraw,
   createOrLoadDraw,
   createOrLoadLottery,
   createOrLoadTicket,
-  findNumberOfWinningCombinationsPerTier,
-  saveTicketCombinations,
   setDrawPrizesPerTier,
+  setNumberOfDrawWinnersPerTier,
 } from './entities';
-import { unpackTicket } from './utils';
+import { packCombination, unpackTicket } from './utils';
 
 export function handlerLotteryDeployed(event: LotteryDeployed): void {
   const lotteryAddress = event.address.toHexString();
@@ -43,26 +42,19 @@ export function handleNewTicket(event: NewTicket): void {
   const drawId = event.params.currentDraw;
   const player = event.params.user;
 
-  const ticket = createOrLoadTicket(ticketId, drawId, packedTicket, player, lotteryAddress);
-  ticket.save();
-
   const lottery = Lottery.load(lotteryAddress.toHexString());
   if (lottery === null) {
     log.warning('handleNewTicket: Lottery not found: {}', [lotteryAddress.toHexString()]);
     return;
   }
 
-  const unpackedTicket = unpackTicket(packedTicket, lottery.selectionSize, lottery.selectionMax);
-
-  for (let counter = lottery.swapWinTier; counter <= lottery.selectionSize; counter++) {
-    const result: number[] = new Array(counter);
-    saveTicketCombinations(unpackedTicket, counter, 0, result, drawId, lotteryAddress, lottery.selectionSize);
-  }
+  const ticket = createOrLoadTicket(ticketId, drawId, packedTicket, player, lottery);
+  ticket.save();
 
   const lotteryContract = LotteryContract.bind(lotteryAddress);
   const draw = createOrLoadDraw(drawId, lotteryContract);
   addPlayerToDraw(draw, player);
-  draw.numberOfSoldTickets = draw.numberOfSoldTickets.plus(BigInt.fromI32(1));
+  addTicketToDraw(draw, ticketId);
   if (drawId.equals(lotteryContract.currentDraw())) {
     // Calculate non-jackpot prizes only for current draw
     setDrawPrizesPerTier(draw, lotteryContract, false);
@@ -82,49 +74,10 @@ export function handleFinishedExecutingDraw(event: FinishedExecutingDraw): void 
     return;
   }
 
-  const unpackedTicket = unpackTicket(winningTicket, lottery.selectionSize, lottery.selectionMax);
-
-  // Check if there is a jackpot winner
-  const result: number[] = new Array(lottery.selectionSize);
-  const numberOfJackpotWinners = findNumberOfWinningCombinationsPerTier(
-    unpackedTicket,
-    lottery.selectionSize,
-    0,
-    result,
-    drawId,
-    lotteryAddress,
-    lottery.selectionSize,
-  );
-
-  const numberOfWinningCombinations: BigInt[] = new Array(lottery.selectionSize - 1);
-  numberOfWinningCombinations.fill(BigInt.fromI32(0));
-
-  // Non-jackpot winner tiers
-  if (numberOfJackpotWinners == BigInt.fromI32(0)) {
-    let numberOfAlreadyAdded: BigInt = BigInt.fromI32(0);
-    for (let counter = lottery.selectionSize - 1; counter >= lottery.swapWinTier; counter--) {
-      const result: number[] = new Array(counter);
-      const numberOfWinningCombinationsPerTier = findNumberOfWinningCombinationsPerTier(
-        unpackedTicket,
-        counter,
-        0,
-        result,
-        drawId,
-        lotteryAddress,
-        lottery.selectionSize,
-      );
-      numberOfAlreadyAdded = calculateNumberOfAlreadyAdded(numberOfWinningCombinations, counter);
-      numberOfWinningCombinations[counter - 1] = numberOfWinningCombinationsPerTier.minus(numberOfAlreadyAdded);
-    }
-  }
-
-  const numberOfWinnersPerTier = numberOfWinningCombinations.slice(lottery.swapWinTier - 1);
-  numberOfWinnersPerTier.push(numberOfJackpotWinners);
-
   const draw = createOrLoadDraw(drawId, lotteryContract);
-  draw.winningTicket = winningTicket.toHexString();
-  draw.numberOfWinnersPerTier = numberOfWinnersPerTier;
+  draw.winningTicket = unpackTicket(winningTicket, lottery.selectionSize, lottery.selectionMax);
   setDrawPrizesPerTier(draw, lotteryContract);
+  setNumberOfDrawWinnersPerTier(draw, lottery, winningTicket);
   draw.save();
 
   const nextDraw = createOrLoadDraw(drawId.plus(BigInt.fromI32(1)), lotteryContract);

@@ -25,19 +25,11 @@ type Ticket @entity {
   " The draw the ticket belongs to "
   draw: Draw!
 
-  " The ticket combination saved as a hex string (ith bit is 1 if the number i+1 is in the combination) "
-  combination: String!
+  " The ticket combination "
+  combination: [Int!]!
 
   " Whether the ticket has been claimed "
   isClaimed: Boolean!
-}
-
-type TicketCombination @entity {
-  " The ID of the ticket combination (<lottery address>_<draw id>_<encoded combination as hex>) "
-  id: ID!
-
-  " The number of tickets with this combination for the draw "
-  numberOfTickets: BigInt!
 }
 
 type Draw @entity {
@@ -50,8 +42,8 @@ type Draw @entity {
   " The timestamp of the draw finalization "
   scheduledTimestamp: BigInt!
 
-  " The winning ticket for the draw saved as a hex string (or null if the draw has not been completed) "
-  winningTicket: String
+  " The winning ticket for the draw "
+  winningTicket: [Int!]
 
   " The prizes per tier (from lower to higher tier) for the draw "
   prizesPerTier: [BigInt!]!
@@ -67,4 +59,7 @@ type Draw @entity {
 
   " The number of tickets sold for the draw "
   numberOfSoldTickets: BigInt!
+
+  " The tickets IDs for the draw "
+  tickets: [BigInt!]!
 }
