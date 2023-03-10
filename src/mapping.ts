@@ -17,7 +17,7 @@ import {
   setDrawPrizesPerTier,
   setNumberOfDrawWinnersPerTier,
 } from './entities';
-import { packCombination, unpackTicket } from './utils';
+import { unpackTicket } from './utils';
 
 export function handlerLotteryDeployed(event: LotteryDeployed): void {
   const lotteryAddress = event.address.toHexString();
@@ -75,7 +75,7 @@ export function handleFinishedExecutingDraw(event: FinishedExecutingDraw): void 
   }
 
   const draw = createOrLoadDraw(drawId, lotteryContract);
-  draw.winningTicket = unpackTicket(winningTicket, lottery.selectionSize, lottery.selectionMax);
+  draw.winningCombination = unpackTicket(winningTicket, lottery.selectionSize, lottery.selectionMax);
   setDrawPrizesPerTier(draw, lotteryContract);
   setNumberOfDrawWinnersPerTier(draw, lottery, winningTicket);
   draw.save();

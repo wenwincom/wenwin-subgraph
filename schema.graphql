@@ -8,8 +8,8 @@ type Lottery @entity {
   " The maximum number that can be selected in a ticket combination "
   selectionMax: Int!
 
-  " The smallest win tier that has prize (i.e. its prize is equal to the ticket price) "
-  swapWinTier: Int!
+  " The lowest winning tier that has prize "
+  minWinningTier: Int!
 }
 
 type Ticket @entity {
@@ -17,7 +17,7 @@ type Ticket @entity {
   id: ID!
 
   " The ID of the ticket "
-  ticketId: BigInt
+  ticketId: BigInt!
 
   " The address of the ticket owner "
   owner: String!
@@ -42,8 +42,8 @@ type Draw @entity {
   " The timestamp of the draw finalization "
   scheduledTimestamp: BigInt!
 
-  " The winning ticket for the draw "
-  winningTicket: [Int!]
+  " The winning combination for the draw "
+  winningCombination: [Int!]
 
   " The prizes per tier (from lower to higher tier) for the draw "
   prizesPerTier: [BigInt!]!
@@ -55,7 +55,7 @@ type Draw @entity {
   players: [String!]!
 
   " The list of winners per tier for the draw "
-  numberOfWinnersPerTier: [BigInt!]!
+  numberOfWinnersPerTier: [BigInt!]
 
   " The number of tickets sold for the draw "
   numberOfSoldTickets: BigInt!

@@ -14,11 +14,11 @@ export function createOrLoadDraw(drawId: BigInt, lottery: LotteryContract): Draw
   const draw = new Draw(internalDrawId);
   draw.drawId = drawId;
   draw.scheduledTimestamp = lottery.drawScheduledAt(drawId);
-  draw.winningTicket = null;
+  draw.winningCombination = null;
   draw.prizesPerTier = new Array<BigInt>();
   draw.numberOfPlayers = BigInt.fromI32(0);
   draw.players = new Array<string>();
-  draw.numberOfWinnersPerTier = new Array<BigInt>();
+  draw.numberOfWinnersPerTier = null;
   draw.numberOfSoldTickets = BigInt.fromI32(0);
   draw.tickets = new Array<BigInt>();
   return draw;
@@ -40,23 +40,23 @@ export function setDrawPrizesPerTier(
   }
 
   const selectionSize = lottery.selectionSize;
-  const swapWinTier = lottery.swapWinTier;
+  const minWinningTier = lottery.minWinningTier;
   const finalTier = calculateJackpot ? selectionSize : selectionSize - 1;
-  const prizes = draw.prizesPerTier.length ? draw.prizesPerTier : new Array<BigInt>(selectionSize - swapWinTier + 1);
-  for (let tier = swapWinTier; tier <= finalTier; ++tier) {
-    prizes[tier - swapWinTier] = calculateTierReward(lotteryContract, draw.drawId, tier, selectionSize);
+  const prizes = draw.prizesPerTier.length ? draw.prizesPerTier : new Array<BigInt>(selectionSize - minWinningTier + 1);
+  for (let tier = minWinningTier; tier <= finalTier; ++tier) {
+    prizes[tier - minWinningTier] = calculateTierReward(lotteryContract, draw.drawId, tier, selectionSize);
   }
   draw.prizesPerTier = prizes;
 }
 
 export function setNumberOfDrawWinnersPerTier(draw: Draw, lottery: Lottery, winningTicket: BigInt): void {
-  const unpackedWinningTicketNumbers = unpackTicket(winningTicket, lottery.selectionSize, lottery.selectionMax);
+  const winningCombinationNumbers = unpackTicket(winningTicket, lottery.selectionSize, lottery.selectionMax);
   const winningCombination = new Set<number>();
-  for (let i = 0; i < unpackedWinningTicketNumbers.length; i++) {
-    winningCombination.add(unpackedWinningTicketNumbers[i]);
+  for (let i = 0; i < winningCombinationNumbers.length; i++) {
+    winningCombination.add(winningCombinationNumbers[i]);
   }
 
-  const numberOfWinnersPerTier = new Array<BigInt>(lottery.selectionSize - lottery.swapWinTier + 1);
+  const numberOfWinnersPerTier = new Array<BigInt>(lottery.selectionSize - lottery.minWinningTier + 1);
   numberOfWinnersPerTier.fill(BigInt.fromI32(0));
 
   for (let i = 0; i < draw.tickets.length; i++) {
@@ -74,8 +74,8 @@ export function setNumberOfDrawWinnersPerTier(draw: Draw, lottery: Lottery, winn
       }
     }
 
-    if (winningTier >= lottery.swapWinTier) {
-      const index = winningTier - lottery.swapWinTier;
+    if (winningTier >= lottery.minWinningTier) {
+      const index = winningTier - lottery.minWinningTier;
       numberOfWinnersPerTier[index] = numberOfWinnersPerTier[index].plus(BigInt.fromI32(1));
     }
   }
