@@ -1,14 +1,15 @@
 import { Address, BigInt } from '@graphprotocol/graph-ts';
-import { Ticket } from '../../generated/schema';
+import { Lottery, Ticket } from '../../generated/schema';
+import { unpackTicket } from '../utils';
 
 export function createOrLoadTicket(
   ticketId: BigInt,
   drawId: BigInt,
   packedTicket: BigInt,
   player: Address,
-  lotteryAddress: Address,
+  lottery: Lottery,
 ): Ticket {
-  const internalId = `${lotteryAddress.toHexString()}_${ticketId.toString()}`;
+  const internalId = `${lottery.id}_${ticketId.toString()}`;
   const savedTicket = Ticket.load(internalId);
   if (savedTicket !== null) {
     return savedTicket;
@@ -16,8 +17,8 @@ export function createOrLoadTicket(
 
   const ticket = new Ticket(internalId);
   ticket.ticketId = ticketId;
-  ticket.draw = `${lotteryAddress.toHexString()}_${drawId.toString()}`;
-  ticket.combination = packedTicket.toHexString();
+  ticket.draw = `${lottery.id}_${drawId.toString()}`;
+  ticket.combination = unpackTicket(packedTicket, lottery.selectionSize, lottery.selectionMax);
   ticket.owner = player.toHexString();
   ticket.isClaimed = false;
   return ticket;

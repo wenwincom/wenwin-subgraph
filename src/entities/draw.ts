@@ -1,7 +1,7 @@
 import { Address, BigInt, log } from '@graphprotocol/graph-ts';
 import { Lottery as LotteryContract } from '../../generated/Lottery/Lottery';
-import { Draw, Lottery } from '../../generated/schema';
-import { calculateTierReward } from '../utils';
+import { Draw, Lottery, Ticket } from '../../generated/schema';
+import { calculateTierReward, unpackTicket } from '../utils';
 
 export function createOrLoadDraw(drawId: BigInt, lottery: LotteryContract): Draw {
   const lotteryAddress = lottery._address.toHexString();
@@ -20,6 +20,7 @@ export function createOrLoadDraw(drawId: BigInt, lottery: LotteryContract): Draw
   draw.players = new Array<string>();
   draw.numberOfWinnersPerTier = new Array<BigInt>();
   draw.numberOfSoldTickets = BigInt.fromI32(0);
+  draw.tickets = new Array<BigInt>();
   return draw;
 }
 
@@ -48,6 +49,40 @@ export function setDrawPrizesPerTier(
   draw.prizesPerTier = prizes;
 }
 
+export function setNumberOfDrawWinnersPerTier(draw: Draw, lottery: Lottery, winningTicket: BigInt): void {
+  const unpackedWinningTicketNumbers = unpackTicket(winningTicket, lottery.selectionSize, lottery.selectionMax);
+  const winningCombination = new Set<number>();
+  for (let i = 0; i < unpackedWinningTicketNumbers.length; i++) {
+    winningCombination.add(unpackedWinningTicketNumbers[i]);
+  }
+
+  const numberOfWinnersPerTier = new Array<BigInt>(lottery.selectionSize - lottery.swapWinTier + 1);
+  numberOfWinnersPerTier.fill(BigInt.fromI32(0));
+
+  for (let i = 0; i < draw.tickets.length; i++) {
+    const ticketInternalId = `${lottery.id}_${draw.tickets[i].toString()}`;
+    const ticket = Ticket.load(ticketInternalId);
+    if (ticket === null) {
+      log.warning('setNumberOfDrawWinnersPerTier: Ticket with id {} not found', [ticketInternalId]);
+      continue;
+    }
+
+    let winningTier = 0;
+    for (let j = 0; j < ticket.combination.length; j++) {
+      if (winningCombination.has(ticket.combination[j])) {
+        winningTier++;
+      }
+    }
+
+    if (winningTier >= lottery.swapWinTier) {
+      const index = winningTier - lottery.swapWinTier;
+      numberOfWinnersPerTier[index] = numberOfWinnersPerTier[index].plus(BigInt.fromI32(1));
+    }
+  }
+
+  draw.numberOfWinnersPerTier = numberOfWinnersPerTier;
+}
+
 export function addPlayerToDraw(draw: Draw, player: Address): void {
   const players = new Set<string>();
   for (let i = 0; i < draw.players.length; i++) {
@@ -56,4 +91,11 @@ export function addPlayerToDraw(draw: Draw, player: Address): void {
   players.add(player.toHexString());
   draw.players = players.values();
   draw.numberOfPlayers = BigInt.fromI32(players.size);
+}
+
+export function addTicketToDraw(draw: Draw, ticketId: BigInt): void {
+  const tickets = draw.tickets;
+  tickets.push(ticketId);
+  draw.tickets = tickets;
+  draw.numberOfSoldTickets = BigInt.fromI32(tickets.length);
 }
