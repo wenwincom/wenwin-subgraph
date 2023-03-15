@@ -1,2 +1,2 @@
 export { calculateTierReward } from './rewards';
-export { packCombination, unpackTicket } from './tickets';
+export { unpackTicket } from './tickets';
